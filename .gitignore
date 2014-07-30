@@ -22,3 +22,4 @@ local
 local/
 local.subdirs
 ccnx-xcode-project
+*.tags*
