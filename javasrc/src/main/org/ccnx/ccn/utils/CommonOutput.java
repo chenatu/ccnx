@@ -34,6 +34,7 @@ import org.ccnx.ccn.io.RepositoryFileOutputStream;
 import org.ccnx.ccn.io.RepositoryOutputStream;
 import org.ccnx.ccn.protocol.CCNTime;
 import org.ccnx.ccn.protocol.ContentName;
+import org.ccnx.ccn.utils.PacketInputStream;
 
 public abstract class CommonOutput {
 
@@ -58,6 +59,33 @@ public abstract class CommonOutput {
 			is = new FileInputStream(theFile);
 		}
 
+		CCNOutputStream ostream;
+
+		// Use file stream in both cases to match behavior. CCNOutputStream doesn't do
+		// versioning and neither it nor CCNVersionedOutputStream add headers.
+		if (CommonParameters.rawMode) {
+			if (CommonParameters.unversioned)
+				ostream = new CCNOutputStream(nodeName, CommonParameters.publisher, handle);
+			else
+				ostream = new CCNFileOutputStream(nodeName, CommonParameters.publisher, handle);
+		} else {
+			if (CommonParameters.unversioned)
+				ostream = new RepositoryOutputStream(nodeName, CommonParameters.publisher, handle, 
+						CommonParameters.local);
+			else
+				ostream = new RepositoryFileOutputStream(nodeName, CommonParameters.publisher, handle, 
+						CommonParameters.local);
+		}
+		if (CommonParameters.timeout != null)
+			ostream.setTimeout(CommonParameters.timeout);
+		do_write(ostream, is);
+
+		return ostream.getVersion();
+	}
+
+	protected CCNTime doPut(CCNHandle handle, int packetLength, int packetCount,
+			ContentName nodeName) throws IOException, InvalidKeyException, ConfigurationException {
+		InputStream is = new PacketInputStream(packetLength, packetCount);
 		CCNOutputStream ostream;
 
 		// Use file stream in both cases to match behavior. CCNOutputStream doesn't do
